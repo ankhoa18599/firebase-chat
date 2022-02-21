@@ -1,41 +1,21 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import { Button } from 'react-bootstrap';
 import { AuthContext } from '../context';
 import { getCookie } from '../common/functions';
 import aes from 'crypto-js/aes';
 import { addDocument, useFireStore } from '../firebase/services';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
-import { db } from '../firebase/config';
 
 export default function ChatWindow() {
     const router = useRouter();
-    const [cookie, setCookie] = useState(getCookie("room_id"));
     const messagesCondition = useMemo(() => {
         return {
             fieldName: "room",
             operator: "==",
-            compareValue: cookie
+            compareValue: getCookie("room_id")
         }
-    }, [cookie]);
+    }, [getCookie("room_id"), message]);
     const [message, setMessage] = useState(null);
-    // const [messages, setMessages] = useState([]);
-    // useEffect(() => {
-
-    //     const q = query(collection(db, "messages"), where("room", "==", getCookie("room_id")));
-    //     const unsubscribe = onSnapshot(q, (querySnapshot) => {
-    //         const data = [];
-    //         querySnapshot.forEach((doc) => {
-    //             data.push({
-    //                 ...doc.data(),
-    //                 id: doc.id
-    //             });
-    //         });
-    //         setMessages(data)
-    //     });
-    //     return unsubscribe
-    // }, [])
-
     const messages = useFireStore("messages", messagesCondition);
     console.log(messages);
     return (
