@@ -8,6 +8,7 @@ import { getCookie, setCookie } from '../common/functions';
 import { AppContext, AuthContext } from '../context'
 import { db } from '../firebase/config';
 import { addDocument, addDocumentWithId } from '../firebase/services';
+import Login from './login';
 
 export default function Info() {
     const { setCurrentUser } = useContext(AuthContext);
@@ -59,7 +60,11 @@ export default function Info() {
     const router = useRouter();
     return (
         <div>
-            <Form>
+            <Form onKeyDown={(e) => {
+                if (e.keyCode === 13 && name?.length > 0 && email?.length > 0) {
+                    handleClick()
+                }
+            }}>
                 <Form.Group className="mb-3" controlId="formBasicName">
                     <Form.Label>Name</Form.Label>
                     <Form.Control type="text" placeholder="Type your name here" onChange={(e) => {
@@ -72,14 +77,12 @@ export default function Info() {
                         setEmail(e.target.value);
                     }} />
                 </Form.Group>
-                <Button variant="primary" onClick={!isLoading ? handleClick : null}>
-                    {isLoading ? 'Starting...' : 'Submit'}
-                </Button>
-                <Button variant="success" className="ms-2" onClick={() => {
-                    router.push("/login")
-                }}>
-                    Login With Google
-                </Button>
+                <div className='d-flex'>
+                    <Button variant="primary" disabled={!(name?.length > 0 && email?.length) > 0} onClick={!isLoading ? handleClick : null}>
+                        {isLoading ? 'Starting...' : 'Submit'}
+                    </Button>
+                    <Login />
+                </div>
             </Form>
         </div>
     )

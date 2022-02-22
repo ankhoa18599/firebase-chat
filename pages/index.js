@@ -2,13 +2,26 @@ import Head from 'next/head'
 import ChatWindow from '../components/ChatWindow'
 import Info from '../components/Info'
 import styles from '../styles/Home.module.css'
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
 import { AppContext, AuthContext } from '../context';
+import { useRouter } from 'next/router';
+import { getCookie } from '../common/functions';
+import { Spinner } from 'react-bootstrap';
 
 
 export default function Home() {
   const { haveCookie } = useContext(AppContext);
   const { currentUser } = useContext(AuthContext);
+  const router = useRouter();
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.type === 2) {
+        router.push("/admin");
+      } else {
+        router.push(`/room/${getCookie("room_id")}`);
+      }
+    }
+  }, [currentUser])
   return (
     <div className={styles.container}>
       <Head>
@@ -20,7 +33,7 @@ export default function Home() {
 
       <main className={styles.main}>
         {currentUser && Object.keys(currentUser)?.length > 0 || haveCookie ? (
-          <span>home</span>
+          <Spinner animation="border" variant="info" />
         ) : (
           <Info />
         )}

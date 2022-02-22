@@ -24,10 +24,9 @@ export const AuthProvider = ({ children }) => {
                     console.log('no user');
                     setCurrentUser(null);
                     // setLoading(false);
-                    // router.push("/login");
+                    router.push("/");
                     return;
                 }
-
             }
             if (!(getCookie("room_id")?.length > 0)) {
                 setCookie("room_id", user.uid, 30);

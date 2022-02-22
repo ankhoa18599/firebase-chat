@@ -2,14 +2,17 @@ import React, { useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { Button } from 'react-bootstrap';
 import { AppContext, AuthContext } from '../context';
-import { getCookie } from '../common/functions';
+import { eraseCookie, getCookie } from '../common/functions';
 import { addDoc, collection, doc, onSnapshot, orderBy, query, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { auth, db } from '../firebase/config';
+import Uploader from './uploader';
+import Image from 'next/image';
 
 export default function ChatWindow({ data, chat_id }) {
     const router = useRouter();
 
-    const { currentUser } = useContext(AuthContext);
+    const { currentUser, setCurrentUser } = useContext(AuthContext);
+    const [message, setMessage] = useState("")
     const [messages, setMessages] = useState(null)
 
     useEffect(() => {
@@ -29,13 +32,38 @@ export default function ChatWindow({ data, chat_id }) {
             return unsubscribe;
         }
     }, [chat_id])
+    const handleSendMessage = async (message) => {
+        if (message?.length > 0) {
+            const messageRef = collection(db, "rooms", chat_id, "messages");
+            await addDoc(messageRef, {
+                message: message,
+                user: currentUser.email,
+                createAt: serverTimestamp()
+
+            })
+            // addDocument("messages", {
+            //     text: e.target.value,
+            //     room: getCookie("room_id")
+            // }
+            // )
+
+        }
+    }
     return (
         <div className='container d-flex justify-content-between flex-column w-100 '>
-            <div style={{ height: `60vh` }} className="overflow-auto d-flex flex-column-reverse ">
+            <div style={{ height: `60vh` }} className="overflow-auto d-flex flex-column-reverse my-4 p-4 ">
                 {messages?.length > 0 && messages.map(message => {
                     return (
-                        <div key={message.id} className={``}>
-                            <p className={` message ${message.user === currentUser.email ? "float-end message-author" : "float-start message-customer"} `}>{message.message}</p>
+                        <div key={message.id} className={`${message.user === currentUser?.email ? "text-end" : "text-start"}`}>
+                            {message.imageMessage?.length > 0 ? (
+                                <Image
+                                    src={message.imageMessage}
+                                    alt={`photo by ${message.user}`}
+                                    width={200}
+                                    height={200}
+                                />
+                            ) : <p className={` message ${message.user === currentUser?.email ? "float-end message-author" : "float-start message-customer"} `}>{message.message}</p>}
+
 
                         </div>
 
@@ -44,35 +72,33 @@ export default function ChatWindow({ data, chat_id }) {
             </div>
             <div className="flex-1">
                 <div className="d-flex">
-                    <input className="form-control" placeholder='Type your message here...' onKeyUp={async (e) => {
-                        if (e.keyCode === 13) {
-                            if (e.target.value?.length > 0) {
-                                const messageRef = collection(db, "rooms", chat_id, "messages");
-                                await addDoc(messageRef, {
-                                    message: e.target.value,
-                                    user: currentUser.email,
-                                    createAt: serverTimestamp()
+                    <input
+                        value={message}
+                        onChange={(e) => {
+                            setMessage(e.target.value);
+                        }}
 
-                                })
-                                // addDocument("messages", {
-                                //     text: e.target.value,
-                                //     room: getCookie("room_id")
-                                // }
-                                // )
+                        className="form-control" placeholder='Type your message here...'
+                        onKeyUp={(e) => {
+                            if (e.keyCode === 13) {
+                                handleSendMessage(e.target.value);
+                                setMessage("");
                                 e.target.value = null;
                             }
-                        }
 
-                    }} />
-                    <Button className="ms-2" >Send</Button>
+                        }} />
+                    <Uploader chat_id={chat_id} />
+                    <Button className="ms-2" onClick={(e) => {
+                        handleSendMessage(message)
+                        setMessage("")
+
+                    }} >Send</Button>
                 </div>
                 <div className='mt-4'>
-
-                    <Button className="mx-3" disabled onClick={() => {
-                        router.push("/login")
-                    }}>Login</Button>
-                    <Button disabled onClick={() => {
-                        auth.signOut()
+                    <Button onClick={() => {
+                        setCurrentUser(null);
+                        eraseCookie("room_id")
+                        auth.signOut();
                     }}>signOut</Button>
                 </div>
             </div>
