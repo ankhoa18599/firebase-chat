@@ -1,4 +1,4 @@
-import { addDoc, collection, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc, Timestamp, updateDoc, where } from "firebase/firestore";
+import { addDoc, collection, doc, getDoc, getDocs, onSnapshot, orderBy, query, serverTimestamp, setDoc, Timestamp, updateDoc, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { db } from "./config";
 
@@ -38,14 +38,15 @@ export function useFireStore(collectionName, conditions) {
 
 export async function addDocument(collectionName, data) {
     try {
-        await addDoc(collection(db, collectionName), {
+        const docRef = await addDoc(collection(db, collectionName), {
             ...data,
             createAt: serverTimestamp()
         })
+        return docRef.id;
     } catch (error) {
         console.log(error)
     }
-    return;
+
 }
 export async function addDocumentWithId(collectionName, id, data) {
     try {
@@ -63,10 +64,22 @@ export async function getDocumentWithId(collectionName, id) {
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-        console.log("Get data success:");
+        console.log("Get data success");
         return docSnap.data();
     } else {
         console.log("No such document!");
+    }
+}
+export async function getDocumentWithCondition(collectionName, conditions) {
+    const docRef = query(collection(db, collectionName), where(conditions.fieldName, conditions.operator, conditions.compareValue));
+    const docSnap = await getDocs(docRef);
+
+    if (docSnap.empty) {
+        console.log("No such document!");
+    } else {
+        console.log("Get data success:");
+        return docSnap.data();
+
     }
 }
 export async function updateDocument({ collectionName, docId, data }) {

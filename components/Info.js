@@ -1,16 +1,63 @@
-import { async } from '@firebase/util';
-import { HmacMD5 } from 'crypto-js';
-import React, { useContext, useState } from 'react'
+
+import { HmacMD5, RC4Drop } from 'crypto-js';
+import { collection, doc, getDocs, query, where } from 'firebase/firestore';
+import { useRouter } from 'next/router';
+import React, { useContext, useEffect, useState } from 'react'
 import { Button, Form } from 'react-bootstrap'
-import { setCookie } from '../common/functions';
+import { getCookie, setCookie } from '../common/functions';
 import { AppContext, AuthContext } from '../context'
-import { addDocumentWithId } from '../firebase/services';
+import { db } from '../firebase/config';
+import { addDocument, addDocumentWithId } from '../firebase/services';
 
 export default function Info() {
+    const { setCurrentUser } = useContext(AuthContext);
     const { infoVisitor, setInfoVisitor } = useContext(AppContext);
     const { ENCRYPT_KEY } = useContext(AuthContext);
     const [name, setName] = useState(null);
     const [email, setEmail] = useState(null);
+
+    const router = useRouter();
+    function simulateNetworkRequest() {
+        return new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+    const [isLoading, setLoading] = useState(false);
+    useEffect(() => {
+        if (isLoading) {
+            simulateNetworkRequest().then(async () => {
+                const q = query(collection(db, "users"), where("email", "==", email));
+                const querySnapshot = await getDocs(q);
+                let id;
+                if (querySnapshot.empty) {
+                    id = await addDocument("users", {
+                        name: name,
+                        email: email,
+                        type: 1 //anonymous. 2 is user with email
+                    })
+                    await addDocumentWithId("rooms", id, {
+                        name: name,
+                        email: email,
+                        counselors: [email]
+                    })
+                } else {
+                    id = querySnapshot.docs.map(item => item.id)[0];
+                }
+                setCurrentUser(prev => ({
+                    ...prev,
+                    name: name,
+                    email: email
+                }))
+
+                setCookie("room_id", id, 30);
+                setLoading(false);
+
+                router.push(`room/${getCookie("room_id")}`)
+            });
+
+        }
+        return simulateNetworkRequest
+    }, [isLoading]);
+
+    const handleClick = () => setLoading(true);
     return (
         <div>
             <Form>
@@ -26,21 +73,8 @@ export default function Info() {
                         setEmail(e.target.value);
                     }} />
                 </Form.Group>
-                <Button variant="primary" onClick={async () => {
-
-                    setInfoVisitor({
-                        name: name,
-                        email: email
-                    });
-                    await addDocumentWithId("rooms", HmacMD5(email, ENCRYPT_KEY).toString(), {
-                        name: name,
-                        email: email,
-                        counselors: []
-                    })
-                    setCookie("room_id", HmacMD5(email, ENCRYPT_KEY), 30);
-                    console.log("setCookie")
-                }}>
-                    Submit
+                <Button variant="primary" onClick={!isLoading ? handleClick : null}>
+                    {isLoading ? 'Starting...' : 'Submit'}
                 </Button>
             </Form>
         </div>

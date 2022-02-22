@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { auth, db } from "../firebase/config";
 import { useRouter } from 'next/router';
 import { AppContext, AuthContext } from ".";
@@ -7,20 +7,28 @@ import { getCookie, setCookie } from "../common/functions";
 import aes from "crypto-js/aes";
 import { doc, setDoc } from "firebase/firestore";
 
+export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
-    const [currentUser, setCurrentUser] = useState(null);
-
+    const [currentUser, setCurrentUser] = useState({});
     const router = useRouter()
     const ENCRYPT_KEY = "6LeJZ68UAAAAAJZ8jxdgylEXeWL8P9Ckv7CLtE6t";
     useEffect(() => {
+
         const unsubscribed = auth.onIdTokenChanged(async (user) => {
-            // if (!user) {
-            //     console.log('no user');
-            //     setCurrentUser(null);
-            //     setLoading(false);
-            //     router.push("/login");
-            //     return;
-            // }
+            if (!user) {
+                if (getCookie("room_id")?.length > 0) {
+                    const userData = await getDocumentWithId("users", getCookie("room_id"));
+                    setCurrentUser(userData);
+                    return;
+                } else {
+                    console.log('no user');
+                    setCurrentUser(null);
+                    // setLoading(false);
+                    // router.push("/login");
+                    return;
+                }
+
+            }
 
 
             // if (!(getCookie("room_id")?.length > 0)) {
@@ -42,14 +50,13 @@ export const AuthProvider = ({ children }) => {
         return () => {
             unsubscribed();
         };
-    }, [currentUser])
-    return <AuthContext.Provider value={{ ENCRYPT_KEY }}>
+    }, [])
+    return <AuthContext.Provider value={{ ENCRYPT_KEY, currentUser, setCurrentUser }}>
         {children}
     </AuthContext.Provider>
 }
 
 export const AppProvider = ({ children }) => {
-    const [infoVisitor, setInfoVisitor] = useState({});
     const [haveCookie, setHaveCookie] = useState(false);
     useEffect(() => {
         if (getCookie("room_id")?.length > 0) {
@@ -59,7 +66,7 @@ export const AppProvider = ({ children }) => {
         }
     }, [])
     return (
-        <AppContext.Provider value={{ infoVisitor, setInfoVisitor, haveCookie }}>
+        <AppContext.Provider value={{ haveCookie }}>
             {children}
         </AppContext.Provider>
     )

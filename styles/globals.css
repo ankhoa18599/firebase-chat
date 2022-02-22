@@ -14,3 +14,15 @@ a {
 * {
   box-sizing: border-box;
 }
+.message{
+  border-radius: 5px;
+  padding: 5px 10px;
+  width: fit-content;
+  max-width: 50vw;
+}
+.message.message-author{
+    background-color: bisque;
+}
+.message.message-customer{
+    background-color: khaki;
+}
