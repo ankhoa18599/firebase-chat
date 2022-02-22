@@ -9,7 +9,6 @@ import { AppContext, AuthContext } from '../context';
 export default function Home() {
   const { haveCookie } = useContext(AppContext);
   const { currentUser } = useContext(AuthContext);
-  console.log(currentUser)
   return (
     <div className={styles.container}>
       <Head>

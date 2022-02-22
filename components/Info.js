@@ -1,5 +1,5 @@
 
-import { HmacMD5, RC4Drop } from 'crypto-js';
+
 import { collection, doc, getDocs, query, where } from 'firebase/firestore';
 import { useRouter } from 'next/router';
 import React, { useContext, useEffect, useState } from 'react'
@@ -16,7 +16,6 @@ export default function Info() {
     const [name, setName] = useState(null);
     const [email, setEmail] = useState(null);
 
-    const router = useRouter();
     function simulateNetworkRequest() {
         return new Promise((resolve) => setTimeout(resolve, 1000));
     }
@@ -49,15 +48,15 @@ export default function Info() {
 
                 setCookie("room_id", id, 30);
                 setLoading(false);
-
                 router.push(`room/${getCookie("room_id")}`)
             });
 
         }
         return simulateNetworkRequest
-    }, [isLoading]);
+    }, [isLoading, name, email]);
 
     const handleClick = () => setLoading(true);
+    const router = useRouter();
     return (
         <div>
             <Form>
@@ -75,6 +74,11 @@ export default function Info() {
                 </Form.Group>
                 <Button variant="primary" onClick={!isLoading ? handleClick : null}>
                     {isLoading ? 'Starting...' : 'Submit'}
+                </Button>
+                <Button variant="success" className="ms-2" onClick={() => {
+                    router.push("/login")
+                }}>
+                    Login With Google
                 </Button>
             </Form>
         </div>

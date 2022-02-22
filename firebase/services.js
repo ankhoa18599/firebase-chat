@@ -78,7 +78,7 @@ export async function getDocumentWithCondition(collectionName, conditions) {
         console.log("No such document!");
     } else {
         console.log("Get data success:");
-        return docSnap.data();
+        return docSnap.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
 
     }
 }

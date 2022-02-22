@@ -14,7 +14,6 @@ const Room = ({ room }) => {
     )
 }
 export default function AdminWindow({ data }) {
-    console.log(data)
     return (
         <section className='container mt-4'>
             <ListGroup as="ul">

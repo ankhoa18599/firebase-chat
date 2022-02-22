@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import { auth, db } from "../firebase/config";
 import { useRouter } from 'next/router';
 import { AppContext, AuthContext } from ".";
-import { addDocument, addDocumentWithId, getDocumentWithId, useFireStore } from "../firebase/services";
+import { addDocument, addDocumentWithId, getDocumentWithCondition, getDocumentWithId, useFireStore } from "../firebase/services";
 import { getCookie, setCookie } from "../common/functions";
 import aes from "crypto-js/aes";
 import { doc, setDoc } from "firebase/firestore";
@@ -29,23 +29,20 @@ export const AuthProvider = ({ children }) => {
                 }
 
             }
-
-
-            // if (!(getCookie("room_id")?.length > 0)) {
-            //     await addDocumentWithId("rooms", aes.encrypt(user.email, ENCRYPT_KEY).toString(), {
-            //         name: user.email,
-            //         author: user.displayName,
-            //         counselors: []
-            //     })
-            //     setCookie("room_id", aes.encrypt(user.email, ENCRYPT_KEY), 30);
-            //     console.log("setCookie")
-            // } else {
-            //     console.log("Website have cookie of room");
-            // }
-            // // setCurrentRoom(getDocumentWithId("rooms", aes.encrypt(user.email, ENCRYPT_KEY)));
+            if (!(getCookie("room_id")?.length > 0)) {
+                setCookie("room_id", user.uid, 30);
+            } else {
+                console.log("Website have cookie of room");
+            }
+            const userData = await getDocumentWithCondition("users", {
+                fieldName: "uid",
+                operator: "==",
+                compareValue: user.uid
+            });
+            setCurrentUser(userData[0]);
             // setCurrentUser(user);
             // setLoading(false);
-            // return;
+            return;
         })
         return () => {
             unsubscribed();

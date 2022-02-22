@@ -1,6 +1,7 @@
 import { signInWithPopup } from 'firebase/auth'
 import { useRouter } from 'next/router'
 import React, { useContext, useEffect } from 'react'
+import { getCookie } from '../common/functions'
 import { AuthContext } from '../context'
 import { auth, provider } from '../firebase/config'
 
@@ -26,11 +27,15 @@ export default function Login() {
         })
     }
     const { currentUser } = useContext(AuthContext);
-    // useEffect(() => {
-    //     if (currentUser) {
-    //         router.push("/");
-    //     }
-    // }, [currentUser])
+    useEffect(() => {
+        if (currentUser) {
+            if (currentUser.type === 2) {
+                router.push("/admin");
+            } else {
+                router.push(`/room/${getCookie("room_id")}`);
+            }
+        }
+    }, [currentUser])
     return (
         <div>
             <button onClick={() => {
