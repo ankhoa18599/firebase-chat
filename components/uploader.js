@@ -4,7 +4,7 @@ import React, { useContext, useEffect, useState } from 'react'
 import { Button } from 'react-bootstrap'
 import { AuthContext } from '../context';
 import { db } from '../firebase/config';
-
+import { FcCancel, FcDocument, FcPicture, FcUpload } from "react-icons/fc";
 
 
 let imgURL = "";
@@ -241,12 +241,12 @@ export default function Uploader({ chat_id, setUploading }) {
   };
 
   return (
-    <div>
+    <div className='d-flex p-2'>
       <label
         htmlFor="uploadIMG"
         className={image || video || doc ? "d-none" : "d-block"}
       >
-        <Button disabled variant="warning" className="ms-2 mb-2 "><small>Picture</small></Button>
+        <FcPicture size={30} />
       </label>
       <input
         id="uploadIMG"
@@ -263,7 +263,7 @@ export default function Uploader({ chat_id, setUploading }) {
         htmlFor="uploadDoc"
         className={image || video || doc ? "d-none" : "d-block"}
       >
-        <Button disabled variant="success" className="ms-2"><small>Document</small></Button>
+        <FcDocument size={30} />
       </label>
       <input
         id="uploadDoc"
@@ -282,20 +282,22 @@ export default function Uploader({ chat_id, setUploading }) {
       />
 
       {(image || doc || video) && (
-        <React.Fragment>
-          <Button variant='danger' className="rounded-pill" onClick={removeIMG}>X</Button>
+        <div className='text-center'>
+          <div className="d-flex justify-content-center ">
+            <FcCancel onClick={removeIMG} />
+            <Button
+              onClick={!progress >= 1 ? handleUpload : null}
+              variant="warning"
+              shape="round"
 
-          <Button
-            onClick={!progress >= 1 ? handleUpload : null}
-
-            shape="round"
-            type="primary"
-            className="position-absolute  rounded-pill"
-            style={{ zIndex: 1 }}
-          >
-            {progress >= 1 ? 'Uploading...' : `Up ^ ${fileName}`}
-          </Button>
-        </React.Fragment>
+              className="  rounded-pill"
+              style={{ zIndex: 1 }}
+            >
+              {progress >= 1 ? 'Uploading...' : <> <FcUpload size={30} color="#fff" /></>}
+            </Button>
+          </div>
+          {progress >= 1 ? '' : <span>{fileName}</span>}
+        </div>
       )}
     </div>
   )
