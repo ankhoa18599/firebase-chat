@@ -20,9 +20,13 @@ a {
   width: fit-content;
   max-width: 50vw;
 }
-.message.message-author{
+.message-author p{
     background-color: bisque;
 }
-.message.message-customer{
+.message-customer p{
     background-color: khaki;
+}
+.message-author a,.message-customer a{
+    background-color: aquamarine;
+
 }

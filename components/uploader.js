@@ -1,6 +1,6 @@
 import { addDoc, collection, serverTimestamp, } from 'firebase/firestore';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import React, { useContext, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { Button } from 'react-bootstrap'
 import { AuthContext } from '../context';
 import { db } from '../firebase/config';
@@ -13,7 +13,7 @@ let videoURL = "";
 var slugify = require("slugify");
 
 
-export default function Uploader({ chat_id }) {
+export default function Uploader({ chat_id, setUploading }) {
   const { currentUser } = useContext(AuthContext);
 
   const [progress, setProgress] = useState(0);
@@ -22,6 +22,15 @@ export default function Uploader({ chat_id }) {
   const [video, setVideo] = useState(null);
   const [fileName, setFileName] = useState(null);
 
+  useEffect(() => {
+    if (fileName?.length > 0) {
+      if (image || doc || video) {
+        setUploading(true);
+      }
+    } else {
+      setUploading(false);
+    }
+  }, [fileName, image, doc])
 
   const handleOnSubmit = async () => {
     let d = new Date();
@@ -29,11 +38,12 @@ export default function Uploader({ chat_id }) {
     const messageRef = collection(db, "rooms", chat_id, "messages");
     await addDoc(messageRef, {
       id: currentUser.uid + n || n,
-      message: docURL.trim(),
+      message: fileName,
       user: currentUser.email,
       name: currentUser.name || currentUser.displayName,
       photoURL: currentUser.photoURL || null,
       videoMessage: videoURL,
+      documentMessage: docURL.trim(),
       imageMessage: imgURL,
       isDeleted: false,
       createAt: serverTimestamp()
@@ -51,7 +61,7 @@ export default function Uploader({ chat_id }) {
     setVideo(null);
     setFileName(null);
     document.getElementById("uploadIMG").value = "";
-    // document.getElementById("uploadDoc").value = "";
+    document.getElementById("uploadDoc").value = "";
     // document.getElementById("uploadVideo").value = "";
   };
 
@@ -127,6 +137,8 @@ export default function Uploader({ chat_id }) {
           alert("Please select a video");
         }
       }
+    } else {
+      setFileName("");
     }
   };
 
@@ -148,14 +160,6 @@ export default function Uploader({ chat_id }) {
             (snapshot.bytesTransferred / snapshot.totalBytes) * 100
           );
           console.log('Upload is ' + progress + '% done');
-          switch (snapshot.state) {
-            case 'paused':
-              console.log('Upload is paused');
-              break;
-            case 'running':
-              console.log('Upload is running');
-              break;
-          }
           setProgress(progress);
         },
         (error) => {
@@ -173,10 +177,10 @@ export default function Uploader({ chat_id }) {
       );
     }
 
-    /* else if (doc) {
-      const docName = uid + "_" + n + "_" + fileName;
-      const uploadTask = storage.ref(`documents/${docName}`).put(doc);
-
+    else if (doc) {
+      const docName = currentUser.uid + "_" + n + "_" + fileName;
+      const storageRef = ref(storage, "documents/" + fileName);
+      const uploadTask = uploadBytesResumable(storageRef, doc);
       uploadTask.on(
         "state_changed",
         (snapshot) => {
@@ -186,24 +190,21 @@ export default function Uploader({ chat_id }) {
           setProgress(progress);
         },
         (error) => {
-          setError(error);
+          console.log(error)
         },
         () => {
-          storage
-            .ref("documents")
-            .child(docName)
-            .getDownloadURL()
-            .then((url) => {
-              docURL = url;
-              setProgress(0);
-              setDoc(null);
-              handleOnSubmit();
-              updateSeen();
-              document.getElementById("uploadDoc").value = "";
-            });
+          getDownloadURL(uploadTask.snapshot.ref).then((url) => {
+            docURL = url;
+            setProgress(0);
+            setDoc(null);
+            handleOnSubmit();
+            document.getElementById("uploadDoc").value = "";
+          });
+
         }
       );
-    } else if (video) {
+    }
+    /* else if (video) {
       const videoName = uid + "_" + n + "_" + fileName;
       const uploadTask = storage.ref(`videos/${videoName}`).put(video);
 
@@ -238,13 +239,14 @@ export default function Uploader({ chat_id }) {
       alert("Error please choose an file to upload");
     }
   };
+
   return (
     <div>
       <label
         htmlFor="uploadIMG"
         className={image || video || doc ? "d-none" : "d-block"}
       >
-        <Button disabled variant="warning" className="ms-2">Picture</Button>
+        <Button disabled variant="warning" className="ms-2 mb-2 "><small>Picture</small></Button>
       </label>
       <input
         id="uploadIMG"
@@ -253,6 +255,27 @@ export default function Uploader({ chat_id }) {
           handChange(e, "image");
         }}
         accept="image/png, image/jpeg, image/gif,image/jpg,"
+        className="position-absolute d-none"
+
+        title=" "
+      />
+      <label
+        htmlFor="uploadDoc"
+        className={image || video || doc ? "d-none" : "d-block"}
+      >
+        <Button disabled variant="success" className="ms-2"><small>Document</small></Button>
+      </label>
+      <input
+        id="uploadDoc"
+        type="file"
+        onChange={(e) => {
+          handChange(e, "doc");
+        }}
+        accept=".doc,
+        .docx,
+        .xml,
+        application/msword,
+        application/vnd.openxmlformats-officedocument.wordprocessingml.document,"
         className="position-absolute d-none"
 
         title=" "

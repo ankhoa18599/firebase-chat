@@ -13,7 +13,8 @@ export default function ChatWindow({ data, chat_id }) {
 
     const { currentUser, setCurrentUser } = useContext(AuthContext);
     const [message, setMessage] = useState("")
-    const [messages, setMessages] = useState(null)
+    const [messages, setMessages] = useState(null);
+    const [uploading, setUploading] = useState(false);
 
     useEffect(() => {
         if (!(getCookie("room_id"))) {
@@ -53,8 +54,9 @@ export default function ChatWindow({ data, chat_id }) {
         <div className='container d-flex justify-content-between flex-column w-100 '>
             <div style={{ height: `60vh` }} className="overflow-auto d-flex flex-column-reverse my-4 p-4 ">
                 {messages?.length > 0 && messages.map(message => {
+                    const align_text_class = message.user === currentUser?.email ? "float-end" : "float-start";
                     return (
-                        <div key={message.id} className={`${message.user === currentUser?.email ? "text-end" : "text-start"}`}>
+                        <div key={message.id} className={` ${message.user === currentUser?.email ? "message-author text-end" : "message-customer text-start"}  `}>
                             {message.imageMessage?.length > 0 ? (
                                 <Image
                                     src={message.imageMessage}
@@ -62,7 +64,14 @@ export default function ChatWindow({ data, chat_id }) {
                                     width={200}
                                     height={200}
                                 />
-                            ) : <p className={` message ${message.user === currentUser?.email ? "float-end message-author" : "float-start message-customer"} `}>{message.message}</p>}
+                            ) :
+                                message.documentMessage?.length > 0 ?
+                                    <>
+                                        <a href={message.documentMessage} className={` message text-decoration-none text-dark d-block  ${align_text_class} my-2`}>{message.message} <Button variant='outline-success' className="rounded-pill ms-1"><span >&#x25BC;</span></Button></a>
+
+                                    </>
+                                    :
+                                    <p className={` message ${align_text_class} `}>{message.message}</p>}
 
 
                         </div>
@@ -87,12 +96,15 @@ export default function ChatWindow({ data, chat_id }) {
                             }
 
                         }} />
-                    <Uploader chat_id={chat_id} />
-                    <Button className="ms-2" onClick={(e) => {
-                        handleSendMessage(message)
-                        setMessage("")
+                    <Uploader chat_id={chat_id} setUploading={setUploading} />
+                    {!uploading && (
+                        <Button className="ms-2" onClick={(e) => {
+                            handleSendMessage(message)
+                            setMessage("")
 
-                    }} >Send</Button>
+                        }} >Send</Button>
+                    )}
+
                 </div>
                 <div className='mt-4'>
                     <Button onClick={() => {
