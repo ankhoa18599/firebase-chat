@@ -18,6 +18,6 @@ export function getCookie(name) {
     return null;
 }
 export function eraseCookie(name) {
-    document.cookie = `${name}=; Max-Age=0; path=/; domain=` + location.hostname;
-    // setCookie(name, "", null);
+    // document.cookie = `${name}=; Max-Age=0; path=/; domain=` + location.hostname;
+    setCookie(name, "", null);
 }
