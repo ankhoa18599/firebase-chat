@@ -6,12 +6,12 @@ import React, { useContext, useEffect, useState } from 'react'
 import { Button, Form } from 'react-bootstrap'
 import { getCookie, setCookie } from '../common/functions';
 import { AppContext, AuthContext } from '../context'
-import { db } from '../firebase/config';
-import { addDocument, addDocumentWithId } from '../firebase/services';
+import { db, provider } from '../firebase/config';
+import { addDocument, addDocumentWithId, updateDocument } from '../firebase/services';
 import Login from './login';
 
 export default function Info() {
-    const { setCurrentUser } = useContext(AuthContext);
+    const { currentUser, setCurrentUser } = useContext(AuthContext);
     const { infoVisitor, setInfoVisitor } = useContext(AppContext);
     const { ENCRYPT_KEY } = useContext(AuthContext);
     const [name, setName] = useState(null);
@@ -40,6 +40,15 @@ export default function Info() {
                     })
                 } else {
                     id = querySnapshot.docs.map(item => item.id)[0];
+                    if (provider?.length > 0 || currentUser?.uid?.length > 0) {
+                        updateDocument("users", id, {
+                            uid: currentUser.uid,
+                            photoURL: currentUser.photoURL,
+                            displayName: currentUser.displayName,
+                            provider: currentUser.provider
+                        })
+                    }
+
                 }
                 setCurrentUser(prev => ({
                     ...prev,

@@ -109,8 +109,9 @@ export default function ChatWindow({ data, chat_id }) {
                 <div className='mt-4'>
                     <Button onClick={() => {
                         setCurrentUser(null);
-                        eraseCookie("room_id")
+                        eraseCookie("room_id");
                         auth.signOut();
+
                     }}>signOut</Button>
                 </div>
             </div>
