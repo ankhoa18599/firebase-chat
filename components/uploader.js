@@ -1,17 +1,32 @@
 import { addDoc, collection, serverTimestamp, } from 'firebase/firestore';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useState } from 'react'
 import { Button } from 'react-bootstrap'
 import { AuthContext } from '../context';
 import { db } from '../firebase/config';
 import { FcCancel, FcDocument, FcPicture, FcUpload } from "react-icons/fc";
+import Image from 'next/image';
 
 
 let imgURL = "";
 let docURL = "";
 let videoURL = "";
 var slugify = require("slugify");
-
+const validImageTypes = [
+  "image/gif",
+  "image/jpeg",
+  "image/png",
+  "image/jpg",
+];
+const validDocTypes = [
+  ".doc",
+  ".docx",
+  ".xml",
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
+const validVideoTypes = ["video/mp4", "video/avi"];
 
 export default function Uploader({ chat_id, setUploading }) {
   const { currentUser } = useContext(AuthContext);
@@ -21,7 +36,15 @@ export default function Uploader({ chat_id, setUploading }) {
   const [doc, setDoc] = useState(null);
   const [video, setVideo] = useState(null);
   const [fileName, setFileName] = useState(null);
+  const [filePreview, setFilePreview] = useState();
+  useEffect(() => {
 
+
+    // clearup
+    return () => {
+      filePreview && URL.revokeObjectURL(filePreview.preview)
+    }
+  }, [filePreview])
   useEffect(() => {
     if (fileName?.length > 0) {
       if (image || doc || video) {
@@ -30,44 +53,13 @@ export default function Uploader({ chat_id, setUploading }) {
     } else {
       setUploading(false);
     }
-  }, [fileName, image, doc])
-
-  const handleOnSubmit = async () => {
-    let d = new Date();
-    let n = d.getTime();
-    const messageRef = collection(db, "rooms", chat_id, "messages");
-    await addDoc(messageRef, {
-      id: currentUser.uid + n || n,
-      message: fileName,
-      user: currentUser.email,
-      name: currentUser.name || currentUser.displayName,
-      photoURL: currentUser.photoURL || null,
-      videoMessage: videoURL,
-      documentMessage: docURL.trim(),
-      imageMessage: imgURL,
-      isDeleted: false,
-      createAt: serverTimestamp()
-
-    })
-    removeIMG();
-  };
-
-  const removeIMG = () => {
-    imgURL = "";
-    docURL = "";
-    videoURL = "";
-    setImage(null);
-    setDoc(null);
-    setVideo(null);
-    setFileName(null);
-    document.getElementById("uploadIMG").value = "";
-    document.getElementById("uploadDoc").value = "";
-    // document.getElementById("uploadVideo").value = "";
-  };
+  }, [fileName, image, doc, video])
 
 
   const handChange = (e, type) => {
     const file = e.target.files[0];
+    file.preview = URL.createObjectURL(file)
+    setFilePreview({ fileSrc: file, fileType: file["type"] });
     if (file) {
       setFileName(
         slugify(file.name, {
@@ -80,20 +72,7 @@ export default function Uploader({ chat_id, setUploading }) {
         })
       );
       const fileType = file["type"];
-      const validImageTypes = [
-        "image/gif",
-        "image/jpeg",
-        "image/png",
-        "image/jpg",
-      ];
-      const validDocTypes = [
-        ".doc",
-        ".docx",
-        ".xml",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      ];
-      const validVideoTypes = ["video/mp4", "video/avi"];
+
       if (type == "image") {
         if (validImageTypes.includes(fileType)) {
           if (file.size > 2097152) {
@@ -142,6 +121,38 @@ export default function Uploader({ chat_id, setUploading }) {
     }
   };
 
+  const handleOnSubmit = async () => {
+    let d = new Date();
+    let n = d.getTime();
+    const messageRef = collection(db, "rooms", chat_id, "messages");
+    await addDoc(messageRef, {
+      id: currentUser.uid + n || n,
+      message: fileName,
+      user: currentUser.email,
+      name: currentUser.name || currentUser.displayName,
+      photoURL: currentUser.photoURL || null,
+      videoMessage: videoURL,
+      documentMessage: docURL.trim(),
+      imageMessage: imgURL,
+      isDeleted: false,
+      createAt: serverTimestamp()
+
+    })
+    removeIMG();
+  };
+
+  const removeIMG = () => {
+    imgURL = "";
+    docURL = "";
+    videoURL = "";
+    setImage(null);
+    setDoc(null);
+    setVideo(null);
+    setFileName(null);
+    document.getElementById("uploadIMG").value = "";
+    document.getElementById("uploadDoc").value = "";
+    // document.getElementById("uploadVideo").value = "";
+  };
 
   const handleUpload = () => {
     let d = new Date();
@@ -275,6 +286,7 @@ export default function Uploader({ chat_id, setUploading }) {
         .docx,
         .xml,
         application/msword,
+        application/pdf,
         application/vnd.openxmlformats-officedocument.wordprocessingml.document,"
         className="position-absolute d-none"
 
@@ -284,7 +296,7 @@ export default function Uploader({ chat_id, setUploading }) {
       {(image || doc || video) && (
         <div className='text-center'>
           <div className="d-flex justify-content-center ">
-            <FcCancel onClick={removeIMG} />
+
             <Button
               onClick={!progress >= 1 ? handleUpload : null}
               variant="warning"
@@ -296,7 +308,17 @@ export default function Uploader({ chat_id, setUploading }) {
               {progress >= 1 ? 'Uploading...' : <> <FcUpload size={30} color="#fff" /></>}
             </Button>
           </div>
-          {progress >= 1 ? '' : <span>{fileName}</span>}
+          {progress >= 1 ? '' : <div className='position-relative'>
+            <div className='d-flex'><FcCancel onClick={removeIMG} /><small>{fileName}</small></div>
+            {filePreview && (
+              <div className='position-absolute'>
+                {validImageTypes.includes(filePreview.fileType) ? <Image src={filePreview.fileSrc.preview} alt="preview image" width={100} height={100} /> : <a href={filePreview.fileSrc.preview} target="_blank" rel="noreferrer" type="application/pdf">{fileName} Preview</a>}
+
+
+              </div>
+            )}
+
+          </div>}
         </div>
       )}
     </div>
