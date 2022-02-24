@@ -311,8 +311,8 @@ export default function Uploader({ chat_id, setUploading }) {
           {progress >= 1 ? '' : <div className='position-relative'>
             <div className='d-flex'><FcCancel onClick={removeIMG} /><small>{fileName}</small></div>
             {filePreview && (
-              <div className='position-absolute'>
-                {validImageTypes.includes(filePreview.fileType) ? <Image src={filePreview.fileSrc.preview} alt="preview image" width={100} height={100} /> : <a href={filePreview.fileSrc.preview} target="_blank" rel="noreferrer" type="application/pdf">{fileName} Preview</a>}
+              <div className='position-absolute img-preview'>
+                <a href={filePreview.fileSrc.preview} target="_blank" rel="noreferrer" type={filePreview.fileType}> {validImageTypes.includes(filePreview.fileType) ? <Image src={filePreview.fileSrc.preview} alt="preview image" width={100} height={100} /> : fileName + " Preview"}</a>
 
 
               </div>
