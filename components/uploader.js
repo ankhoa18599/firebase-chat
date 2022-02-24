@@ -1,23 +1,22 @@
-import { addDoc, collection, serverTimestamp, } from 'firebase/firestore';
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import React, { useCallback, useContext, useEffect, useState } from 'react'
-import { Button } from 'react-bootstrap'
-import { AuthContext } from '../context';
-import { db } from '../firebase/config';
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import {
+  getStorage,
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+} from "firebase/storage";
+import React, { useCallback, useContext, useEffect, useState } from "react";
+import { Button } from "react-bootstrap";
+import { AuthContext } from "../context";
+import { db } from "../firebase/config";
 import { FcCancel, FcDocument, FcPicture, FcUpload } from "react-icons/fc";
-import Image from 'next/image';
-
+import Image from "next/image";
 
 let imgURL = "";
 let docURL = "";
 let videoURL = "";
 var slugify = require("slugify");
-const validImageTypes = [
-  "image/gif",
-  "image/jpeg",
-  "image/png",
-  "image/jpg",
-];
+const validImageTypes = ["image/gif", "image/jpeg", "image/png", "image/jpg"];
 const validDocTypes = [
   ".doc",
   ".docx",
@@ -38,13 +37,11 @@ export default function Uploader({ chat_id, setUploading }) {
   const [fileName, setFileName] = useState(null);
   const [filePreview, setFilePreview] = useState();
   useEffect(() => {
-
-
     // clearup
     return () => {
-      filePreview && URL.revokeObjectURL(filePreview.preview)
-    }
-  }, [filePreview])
+      filePreview && URL.revokeObjectURL(filePreview.preview);
+    };
+  }, [filePreview]);
   useEffect(() => {
     if (fileName?.length > 0) {
       if (image || doc || video) {
@@ -53,12 +50,11 @@ export default function Uploader({ chat_id, setUploading }) {
     } else {
       setUploading(false);
     }
-  }, [fileName, image, doc, video])
-
+  }, [fileName, image, doc, video]);
 
   const handChange = (e, type) => {
     const file = e.target.files[0];
-    file.preview = URL.createObjectURL(file)
+    file.preview = URL.createObjectURL(file);
     setFilePreview({ fileSrc: file, fileType: file["type"] });
     if (file) {
       setFileName(
@@ -129,15 +125,14 @@ export default function Uploader({ chat_id, setUploading }) {
       id: currentUser.uid + n || n,
       message: fileName,
       user: currentUser.email,
-      name: currentUser.name || currentUser.displayName,
+      name: currentUser.displayName,
       photoURL: currentUser.photoURL || null,
       videoMessage: videoURL,
       documentMessage: docURL.trim(),
       imageMessage: imgURL,
       isDeleted: false,
-      createAt: serverTimestamp()
-
-    })
+      createAt: serverTimestamp(),
+    });
     removeIMG();
   };
 
@@ -170,11 +165,11 @@ export default function Uploader({ chat_id, setUploading }) {
           const progress = Math.round(
             (snapshot.bytesTransferred / snapshot.totalBytes) * 100
           );
-          console.log('Upload is ' + progress + '% done');
+          console.log("Upload is " + progress + "% done");
           setProgress(progress);
         },
         (error) => {
-          console.log(error)
+          console.log(error);
         },
         () => {
           getDownloadURL(uploadTask.snapshot.ref).then((url) => {
@@ -186,9 +181,7 @@ export default function Uploader({ chat_id, setUploading }) {
           });
         }
       );
-    }
-
-    else if (doc) {
+    } else if (doc) {
       const docName = currentUser.uid + "_" + n + "_" + fileName;
       const storageRef = ref(storage, "documents/" + fileName);
       const uploadTask = uploadBytesResumable(storageRef, doc);
@@ -201,7 +194,7 @@ export default function Uploader({ chat_id, setUploading }) {
           setProgress(progress);
         },
         (error) => {
-          console.log(error)
+          console.log(error);
         },
         () => {
           getDownloadURL(uploadTask.snapshot.ref).then((url) => {
@@ -211,10 +204,9 @@ export default function Uploader({ chat_id, setUploading }) {
             handleOnSubmit();
             document.getElementById("uploadDoc").value = "";
           });
-
         }
       );
-    }
+    } else {
     /* else if (video) {
       const videoName = uid + "_" + n + "_" + fileName;
       const uploadTask = storage.ref(`videos/${videoName}`).put(video);
@@ -246,13 +238,12 @@ export default function Uploader({ chat_id, setUploading }) {
         }
       );
     } */
-    else {
       alert("Error please choose an file to upload");
     }
   };
 
   return (
-    <div className='d-flex p-2'>
+    <div className="d-flex p-2">
       <label
         htmlFor="uploadIMG"
         className={image || video || doc ? "d-none" : "d-block"}
@@ -267,7 +258,6 @@ export default function Uploader({ chat_id, setUploading }) {
         }}
         accept="image/png, image/jpeg, image/gif,image/jpg,"
         className="position-absolute d-none"
-
         title=" "
       />
       <label
@@ -289,38 +279,63 @@ export default function Uploader({ chat_id, setUploading }) {
         application/pdf,
         application/vnd.openxmlformats-officedocument.wordprocessingml.document,"
         className="position-absolute d-none"
-
         title=" "
       />
 
       {(image || doc || video) && (
-        <div className='text-center'>
+        <div className="text-center">
           <div className="d-flex justify-content-center ">
-
             <Button
               onClick={!progress >= 1 ? handleUpload : null}
               variant="warning"
               shape="round"
-
               className="  rounded-pill"
               style={{ zIndex: 1 }}
             >
-              {progress >= 1 ? 'Uploading...' : <> <FcUpload size={30} color="#fff" /></>}
+              {progress >= 1 ? (
+                "Uploading..."
+              ) : (
+                <>
+                  {" "}
+                  <FcUpload size={30} color="#fff" />
+                </>
+              )}
             </Button>
           </div>
-          {progress >= 1 ? '' : <div className='position-relative'>
-            <div className='d-flex'><FcCancel onClick={removeIMG} /><small>{fileName}</small></div>
-            {filePreview && (
-              <div className='position-absolute img-preview'>
-                <a href={filePreview.fileSrc.preview} target="_blank" rel="noreferrer" type={filePreview.fileType}> {validImageTypes.includes(filePreview.fileType) ? <Image src={filePreview.fileSrc.preview} alt="preview image" width={100} height={100} /> : fileName + " Preview"}</a>
-
-
+          {progress >= 1 ? (
+            ""
+          ) : (
+            <div className="position-relative">
+              <div className="d-flex">
+                <FcCancel onClick={removeIMG} />
+                <small>{fileName}</small>
               </div>
-            )}
-
-          </div>}
+              {filePreview && (
+                <div className="position-absolute img-preview">
+                  <a
+                    href={filePreview.fileSrc.preview}
+                    target="_blank"
+                    rel="noreferrer"
+                    type={filePreview.fileType}
+                  >
+                    {" "}
+                    {validImageTypes.includes(filePreview.fileType) ? (
+                      <Image
+                        src={filePreview.fileSrc.preview}
+                        alt="preview image"
+                        width={100}
+                        height={100}
+                      />
+                    ) : (
+                      fileName + " Preview"
+                    )}
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
-  )
+  );
 }
